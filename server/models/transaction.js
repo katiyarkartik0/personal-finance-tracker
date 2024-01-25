@@ -1,14 +1,18 @@
 const mongoose = require("mongoose");
 
 const transactionSchema = mongoose.Schema(
-    {
-        description: { type: String, required: true },
-        amount: { type: Number, required: true },
-        category: { type: String },
-        currency: { type: String, required: true },
-        date: { type: Date },
+  {
+    description: { type: String },
+    amount: { type: Number },
+    category: { type: String },
+    currency: { type: String },
+    date: {
+      day: { type: Number },
+      month: { type: Number },
+      year: { type: Number },
     },
-    { timestaps: true }
+  },
+  { timestaps: true }
 );
 
 const Transaction = mongoose.model("Transaction", transactionSchema);

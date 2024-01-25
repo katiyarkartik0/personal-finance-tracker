@@ -26,6 +26,48 @@ class Validator {
       isInputValid: true,
     };
   }
+  dateValidation(date) {
+    for (const attribute in date) {
+      if (typeof date[attribute] !== "number") {
+        console.log(date[attribute])
+        return {
+          isValidDate: false,
+          msg: "please enter a valid data type",
+        };
+      }
+      if (attribute === "year") {
+        const { year } = date;
+        if (year < 0) {
+          return {
+            isValidDate: false,
+            msg: "please enter a valid input of date",
+          };
+        }
+      }
+      if (attribute === "month") {
+        const { month } = date;
+
+        if (month < 1 || month > 12) {
+          return {
+            isValidDate: false,
+            msg: "please enter a valid input of date",
+          };
+        }
+      }
+      if (attribute === "day") {
+        const { day } = date;
+        if (day < 1 || day > 31) {
+          return {
+            isValidDate: false,
+            msg: "please enter a valid input date",
+          };
+        }
+      }
+    }
+    return {
+      isValidDate: true,
+    };
+  }
 }
 
 module.exports = { Validator };
