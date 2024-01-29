@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { transactionRoutes } = require("./routes/transaction");
-const { spendingRoutes } = require("./routes/spendings");
+const { overviewRoutes } = require("./routes/overview");
 
 const routes = express.Router();
 
@@ -19,10 +19,8 @@ app.get("/", (req, res) => {
   res.status(200).send("Welcome");
 });
 
-// app.use("/api/auth", authRoutes);
-// app.use("/api/accessToken",verifyToken,accessTokenRoutes)
 app.use("/api/transaction",transactionRoutes)
-app.use("/api/spending",spendingRoutes)
+app.use("/api/overview",overviewRoutes)
 
 
 
