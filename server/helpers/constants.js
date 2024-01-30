@@ -10,7 +10,20 @@ const currencyExchangeRatesInDollars = {
   RUB: 77.45,
 };
 
-const monthLabels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const monthsArray = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 const getYearsArray = () => {
   const yearsArray = [];
@@ -20,8 +33,12 @@ const getYearsArray = () => {
   return yearsArray;
 };
 
+const daysArray = Array.from({ length: 32 }, (_, index) => index + 1);
+
+
 module.exports = {
   currencyExchangeRatesInDollars,
-  monthLabels,
+  monthsArray,
   getYearsArray,
+  daysArray
 };

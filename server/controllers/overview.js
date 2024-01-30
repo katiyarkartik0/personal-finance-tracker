@@ -1,7 +1,12 @@
 const {
-  currencyExchangeRatesInDollars: currencyExchangeRates,
-  monthLabels,
+  findInData,
+  sanitizeDateParameters,
+  convertAmount,
+} = require("../helpers/assets");
+const {
+  monthsArray,
   getYearsArray,
+  daysArray,
 } = require("../helpers/constants");
 const { Validator } = require("../helpers/validator");
 const Transaction = require("../models/transaction");
@@ -15,92 +20,148 @@ const findTransactions = async (date) => {
   return await Transaction.find(queryObj);
 };
 
-const sanitizeDateParameters = (date) => {
-  let sanitizedDate = {};
-  Object.keys(date).forEach((key) => {
-    sanitizedDate = { ...sanitizedDate, [key]: Number(date[key]) };
-  });
-  return sanitizedDate;
-};
+const getOverviewForDayMonthYear = ({
+  transactions,
+  normalizedCurrency,
+  date: { day, month, year },
+}) => {
+  const datasets = [];
+  transactions.forEach((transaction) => {
+    const {
+      category,
+      amount,
+      currency,
+    } = transaction;
+    const { convertedAmount, isConversionValid, msg } = convertAmount({
+      amount,
+      fromCurrency: currency,
+      toCurrency: normalizedCurrency,
+    });
+    if (isConversionValid) {
+      const { indexOfCategory, categoryExists } = findInData({
+        datasets,
+        category,
+      });
 
-const convertAmount = ({ amount, fromCurrency, toCurrency }) => {
-  if (
-    !(fromCurrency in currencyExchangeRates) ||
-    !(toCurrency in currencyExchangeRates)
-  ) {
-    return { isConversionValid: false, msg: "Invalid currency code" };
-  }
-  const conversionRate =
-    currencyExchangeRates[toCurrency] / currencyExchangeRates[fromCurrency];
-  const convertedAmount = amount * conversionRate;
-
-  return { isConversionValid: true, convertedAmount };
-};
-
-const getOverviewForDayMonthYear = ({ transaction, normalizedCurrency }) => {
-  const overview = {};
-  const {
-    category,
-    amount,
-    currency,
-    date: { day, month, year },
-  } = transaction;
-  const { convertedAmount, isConversionValid, msg } = convertAmount({
-    amount,
-    fromCurrency: currency,
-    toCurrency: normalizedCurrency,
-  });
-  if (isConversionValid) {
-    if (overview[category]) {
-      overview[category].amount[0] += convertedAmount;
-    } else {
-      overview[category] = {
-        label: category,
-        amount: [convertedAmount],
-      };
+      if (categoryExists) {
+        datasets[indexOfCategory].data[0] += convertedAmount;
+      }
+      if (!categoryExists) {
+        datasets.push({
+          label: category,
+          data: new Array(1).fill(0),
+        });
+        datasets[datasets.length - 1].data[0] += convertedAmount;
+      }
     }
-  }
+  });
+  console.log({ datasets }, "ddddddddddddddddddddddddd");
+  return { datasets, labels: [`${day}-${month}-${year}`] };
+  ///////////////////////////////////////////////////
+  // const overview = {};
+  // const {
+  //   category,
+  //   amount,
+  //   currency,
+  //   date: { day, month, year },
+  // } = transaction;
+  // const { convertedAmount, isConversionValid, msg } = convertAmount({
+  //   amount,
+  //   fromCurrency: currency,
+  //   toCurrency: normalizedCurrency,
+  // });
+  // if (isConversionValid) {
+  //   if (overview[category]) {
+  //     overview[category].amount[0] += convertedAmount;
+  //   } else {
+  //     overview[category] = {
+  //       label: category,
+  //       amount: [convertedAmount],
+  //     };
+  //   }
+  // }
 
-  return { datasets: overview, labels: [`${day}-${month}-${year}`] };
+  // return { datasets: overview, labels: [`${day}-${month}-${year}`] };
+};
+
+const getOverviewAcrossDays = ({ transactions, normalizedCurrency }) => {
+  const datasets = [];
+  transactions.forEach((transaction) => {
+    const {
+      category,
+      date: { day },
+      amount,
+      currency,
+    } = transaction;
+    const { convertedAmount, isConversionValid, msg } = convertAmount({
+      amount,
+      fromCurrency: currency,
+      toCurrency: normalizedCurrency,
+    });
+
+    if (isConversionValid) {
+      const { indexOfCategory, categoryExists } = findInData({
+        datasets,
+        category,
+      });
+      if (categoryExists) {
+        datasets[indexOfCategory].data[day - 1] += convertedAmount;
+      }
+      if (!categoryExists) {
+        datasets.push({
+          label: category,
+          data: new Array(33).fill(0),
+        });
+        datasets[datasets.length - 1].data[day - 1] += convertedAmount;
+      }
+    }
+  });
+  return { datasets, labels: daysArray };
 };
 
 const getOverviewAcrossMonths = ({ transactions, normalizedCurrency }) => {
-  const overview = {};
-  for (const transaction of transactions) {
+  const datasets = [];
+  transactions.forEach((transaction) => {
     const {
       category,
+      date: { month },
       amount,
       currency,
-      date: { month },
     } = transaction;
     const { convertedAmount, isConversionValid, msg } = convertAmount({
       amount,
       fromCurrency: currency,
       toCurrency: normalizedCurrency,
     });
+
     if (isConversionValid) {
-      if (overview[category]) {
-        overview[category].amount[month] += convertedAmount;
-      } else {
-        overview[category] = {
+      const { indexOfCategory, categoryExists } = findInData({
+        datasets,
+        category,
+      });
+      if (categoryExists) {
+        datasets[indexOfCategory].data[month - 1] += convertedAmount;
+      }
+      if (!categoryExists) {
+        datasets.push({
           label: category,
-          amount: new Array(13).fill(0),
-        };
-        overview[category].amount[month] += convertedAmount;
+          data: new Array(12).fill(0),
+        });
+        datasets[datasets.length - 1].data[month - 1] += convertedAmount;
       }
     }
-  }
-  return { datasets: overview, labels: monthLabels };
+  });
+  return { datasets, labels: monthsArray };
 };
 
 const getOverviewAcrossYears = ({ transactions, normalizedCurrency }) => {
-  const overview = {};
-  for (const transaction of transactions) {
+  const datasets = [];
+  transactions.forEach((transaction) => {
     const {
       category,
+      date: { year },
       amount,
       currency,
-      date: { year },
     } = transaction;
     const { convertedAmount, isConversionValid, msg } = convertAmount({
       amount,
@@ -108,18 +169,50 @@ const getOverviewAcrossYears = ({ transactions, normalizedCurrency }) => {
       toCurrency: normalizedCurrency,
     });
     if (isConversionValid) {
-      if (overview[category]) {
-        overview[category].amount[year - 2000] += convertedAmount;
-      } else {
-        overview[category] = {
+      const { indexOfCategory, categoryExists } = findInData({
+        datasets,
+        category,
+      });
+      if (categoryExists) {
+        datasets[indexOfCategory].data[year - 2000] += convertedAmount;
+      }
+      if (!categoryExists) {
+        datasets.push({
           label: category,
-          amount: new Array(25).fill(0),
-        };
-        overview[category].amount[year - 2000] += convertedAmount;
+          data: new Array(25).fill(0),
+        });
+        datasets[datasets.length - 1].data[year - 2000] += convertedAmount;
       }
     }
-  }
-  return { datasets: overview, labels: getYearsArray() };
+  });
+
+  return { datasets, labels: getYearsArray() };
+
+  // for (const transaction of transactions) {
+  //   const {
+  //     category,
+  //     amount,
+  //     currency,
+  //     date: { year },
+  //   } = transaction;
+  //   const { convertedAmount, isConversionValid, msg } = convertAmount({
+  //     amount,
+  //     fromCurrency: currency,
+  //     toCurrency: normalizedCurrency,
+  //   });
+  //   if (isConversionValid) {
+  //     if (overview[category]) {
+  //       overview[category].amount[year - 2000] += convertedAmount;
+  //     } else {
+  //       overview[category] = {
+  //         label: category,
+  //         amount: new Array(25).fill(0),
+  //       };
+  //       overview[category].amount[year - 2000] += convertedAmount;
+  //     }
+  //   }
+  // }
+  // return { data };
 };
 
 const getOverview = async (req, res) => {
@@ -129,20 +222,27 @@ const getOverview = async (req, res) => {
   try {
     const transactions = await findTransactions(filteredDate);
     if (day && month && year) {
+      console.log("hjkjk");
       const { datasets, labels } = getOverviewForDayMonthYear({
+        transactions,
+        normalizedCurrency,
+        date: { day, month, year },
+      });
+      console.log(datasets, "kkkkkkk");
+      return res.status(200).json({ datasets, labels });
+    } else if (month && year) {
+      const { datasets, labels } = getOverviewAcrossDays({
         transactions,
         normalizedCurrency,
       });
       return res.status(200).json({ datasets, labels });
-    }
-    if ((day && year) || year) {
+    } else if (year) {
       const { datasets, labels } = getOverviewAcrossMonths({
         transactions,
         normalizedCurrency,
       });
       return res.status(200).json({ datasets, labels });
-    }
-    if ((day && month) || month) {
+    } else if (!day && !month && !year) {
       const { datasets, labels } = getOverviewAcrossYears({
         transactions,
         normalizedCurrency,
@@ -150,6 +250,7 @@ const getOverview = async (req, res) => {
       return res.status(200).json({ datasets, labels });
     }
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ msg: JSON.stringify(error) });
   }
 };
