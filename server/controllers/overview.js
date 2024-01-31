@@ -242,7 +242,7 @@ const getOverview = async (req, res) => {
         normalizedCurrency,
       });
       return res.status(200).json({ datasets, labels });
-    } else if (!day && !month && !year) {
+    } else{
       const { datasets, labels } = getOverviewAcrossYears({
         transactions,
         normalizedCurrency,

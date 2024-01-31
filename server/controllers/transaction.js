@@ -1,3 +1,4 @@
+const { sanitizeDateParameters } = require("../helpers/assets");
 const { Validator } = require("../helpers/validator");
 const Transaction = require("../models/transaction");
 
@@ -13,7 +14,8 @@ const saveTransaction = async (req, res) => {
   if (!isInputValid) {
     return res.status(400).json({ msg: inputValidationMessage });
   }
-  const { isValidDate, msg: dateValidationMessage } = dateValidation(date);
+  const sanitizedDate = sanitizeDateParameters(date)
+  const { isValidDate, msg: dateValidationMessage } = dateValidation(sanitizedDate);
   if (!isValidDate) {
     return res.status(400).json({ msg: dateValidationMessage });
   }

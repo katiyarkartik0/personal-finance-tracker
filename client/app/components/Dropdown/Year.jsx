@@ -1,7 +1,9 @@
-// components/YearDropdown.js
+import { setYear } from "@/app/store/slice/date";
 import React from "react";
+import { useDispatch } from "react-redux";
 
-const YearDropdown = ({ setYear }) => {
+const YearDropdown = ({ isFormData, formValue, setFormYear }) => {
+  const dispatch = useDispatch();
   const startYear = 2000;
   const endYear = 2024;
   const years = Array.from(
@@ -12,9 +14,14 @@ const YearDropdown = ({ setYear }) => {
   return (
     <select
       className="p-2 border rounded-md"
-      onChange={(e) => setYear(e.target.value)}
+      onChange={(e) =>
+        !isFormData
+          ? dispatch(setYear({ year: e.target.value }))
+          : setFormYear(e.target.value)
+      }
+      defaultValue={!isFormData ? "" : formValue}
     >
-      <option value="">--Choose an Year--</option>
+      {!isFormData && <option value="">--Choose an Year--</option>}
       {years.map((year) => {
         return (
           <option key={year} value={year}>

@@ -27,9 +27,10 @@ class Validator {
     };
   }
   dateValidation(date) {
+
     for (const attribute in date) {
       if (typeof date[attribute] !== "number") {
-        console.log(date[attribute])
+        console.log(date[attribute], typeof date[attribute])
         return {
           isValidDate: false,
           msg: "please enter a valid data type",

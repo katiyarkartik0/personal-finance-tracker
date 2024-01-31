@@ -1,98 +1,74 @@
 "use client";
-
-import { getOverview } from "@/app/api/overview";
 import { Chart as ChartJS, registerables } from "chart.js";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import YearDropdown from "./Dropdown/Year";
-import CurrencyDropdown from "./CurrencyDropdown";
+import CurrencyDropdown from "./Dropdown/Currency";
 import { Bar } from "react-chartjs-2";
 import DaysDropdown from "./Dropdown/Days";
 import MonthDropdown from "./Dropdown/Month";
+import useIsMobile from "../hooks/useIsMobile";
+import { useSelector } from "react-redux";
+import {
+  selectOverview,
+} from "../helpers/selectors";
 
 const defaultYear = 2022;
 const defaultCurrency = "USD";
-const options = {
-  indexAxis: window.innerWidth > 768 ? "x" : "y",
-  plugins: {
-    legend: {
-      positon: "top",
-      align: "start",
-      labels: {
-        boxWidth: 7,
-        usePointStyle: true,
-        pointStyle: "circle",
-      },
-      title: {
-        text: "Monthly overview",
-        display: true,
-        color: "#000",
-        font: {
-          size: 8,
-        },
-      },
-    },
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-  },
-  elements: {
-    bar: {
-      barPercentage: 0.3,
-      categoryPercentage: 1,
-    },
-  },
-};
 
 const Graph = () => {
   ChartJS.register(...registerables);
-  const [monthlyData, setMonthlyData] = useState({ datasets: [], labels: [] });
-  const [year, setYear] = useState("");
-  const [month, setMonth] = useState("");
-  const [day, setDay] = useState("");
-  const [currency, setCurrency] = useState(defaultCurrency);
-  useEffect(() => {
-    const fetchOverview = async () => {
-      let date = {};
-      if (day && month && year) {
-        date = { day, month, year };
-      } else if (month && year) {
-        date = { month, year };
-      } else if (year) {
-        date = { year };
-      }
-      try {
-        const response = await getOverview({
-          date,
-          normalizedCurrency: currency,
-        });
-        const { datasets, labels } = await response.json();
-        setMonthlyData({ datasets, labels });
-      } catch (err) {}
-    };
-    fetchOverview();
-  }, [year, currency, day, month]);
+  const monthlyData = useSelector(selectOverview);
 
+  const isMobile = useIsMobile();
+
+  const options = useMemo(
+    () => ({
+      indexAxis: isMobile ? "y" : "x",
+      plugins: {
+        legend: {
+          positon: "top",
+          align: "start",
+          labels: {
+            boxWidth: 7,
+            usePointStyle: true,
+            pointStyle: "circle",
+          },
+          title: {
+            text: "Monthly overview",
+            display: true,
+            color: "#000",
+            font: {
+              size: 8,
+            },
+          },
+        },
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+      },
+      elements: {
+        bar: {
+          barPercentage: 0.3,
+          categoryPercentage: 1,
+        },
+      },
+    }),
+    [isMobile]
+  );
 
   return (
     <>
       <h3>
-        Your <DaysDropdown setDay={setDay} />{" "}
-        <MonthDropdown setMonth={setMonth} />{" "}
-        <YearDropdown setYear={setYear} defaultYear={defaultYear} /> Finance
-        Overview in{" "}
+        Your <DaysDropdown /> <MonthDropdown />{" "}
+        <YearDropdown defaultYear={defaultYear} /> Finance Overview in{" "}
         <CurrencyDropdown
-          setCurrency={setCurrency}
           defaultCurrency={defaultCurrency}
         />{" "}
         is here
       </h3>
-      <Bar
-        data={monthlyData}
-        height={window.innerWidth > 768 ? 100 : 250}
-        options={options}
-      />
+      <Bar data={monthlyData} height={isMobile ? 250 : 100} options={options} />
     </>
   );
 };

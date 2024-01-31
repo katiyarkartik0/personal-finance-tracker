@@ -1,8 +1,9 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
-import Dialog from "./components/Dialog";
-import TransactionForm from "./components/Form";
+import StoreProvider from "./StoreProvider";
+// import { Provider } from "react-redux";
+// import store from "store";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,11 +16,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Navbar />
-        {children}
-        <Dialog title="Example Modal">
-          <TransactionForm />
-        </Dialog>
+        <StoreProvider>
+          <Navbar />
+          {children}
+        </StoreProvider>
       </body>
     </html>
   );
